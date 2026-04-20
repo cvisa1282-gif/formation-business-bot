@@ -99,5 +99,28 @@ async def buy_credits_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("💰 Choisis ton pack de crédits :", reply_markup=reply_markup)
 
+# ====================== GESTION DU MENU TEXTE ======================
+async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
 
+    if text == "👤 Mon Profil":
+        await show_profile(update, context)
+    elif text == "💰 Acheter Crédits":
+        await buy_credits_menu(update, context)
+    elif text == "🔗 Mon Lien Parrainage":
+        user_id = update.effective_user.id
+        bot_username = (await context.bot.get_me()).username
+        await update.message.reply_text(
+            f"🔗 Ton lien de parrainage :\n"
+            f"https://t.me/{bot_username}?start={user_id}\n\n"
+            f"Partage ce lien → Tu gagnes 20 crédits par filleul valide !"
+        )
+    elif text == "🏆 Top Promoteurs":
+        await update.message.reply_text("🏆 Top Promoteurs du mois\n(En cours de développement)")
+    elif text == "💸 Retrait":
+        await update.message.reply_text("💸 Retrait minimum 5000 CFA\nFonction bientôt disponible.")
+    elif text == "📚 Boutique Formations":
+        await update.message.reply_text("📚 Boutique des formations\nBientôt disponible.")
+    else:
+        await main_menu(update, context)
 print("✅ handlers.py chargé avec succès OK")
