@@ -1,63 +1,40 @@
 import asyncio
+import os
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters
 from config import TOKEN
 from database import init_db
-from handlers import start, main_menu, show_profile, buy_credits_menu
+from handlers import start, main_menu, show_profile, buy_credits_menu, handle_text
 from admin import handle_payment_callback, handle_withdrawal_callback, top_promoters_admin
 
-print("🚀 Démarrage de Formation Business Bot...")
+print("🚀 Formation Business Bot - Mode Render")
 
-# ====================== MAIN ======================
 def main():
     init_db()
 
-    app = Application.builder().token(TOKEN).build()
+    application = Application.builder().token(TOKEN).build()
 
-    # Commandes
-    app.add_handler(CommandHandler("start", start))
+    # Handlers
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
+    application.add_handler(CallbackQueryHandler(handle_payment_callback))
+    application.add_handler(CallbackQueryHandler(handle_withdrawal_callback))
+    application.add_handler(CallbackQueryHandler(top_promoters_admin, pattern="^give_500_"))
 
-    # Messages du clavier
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
+    print("✅ Tous les handlers chargés")
+    print("✅ Police 👮 actif")
+    print("✅ Bot prêt pour webhook")
 
-    # Boutons inline
-    app.add_handler(CallbackQueryHandler(handle_payment_callback))
-    app.add_handler(CallbackQueryHandler(handle_withdrawal_callback))
-    app.add_handler(CallbackQueryHandler(top_promoters_admin, pattern="^give_500_"))
+    # Pour Render : on ne lance pas run_polling(), on laisse Render gérer
+    # On définit le webhook manuellement plus tard
 
-    print("✅ Bot démarré avec succès !")
-    print("📌 Token et ID admin chargés")
-    print("📌 Police 👮 actif")
-    print("📌 Tous les modules importés")
+    port = int(os.environ.get("PORT", 8443))
+    print(f"✅ Bot prêt sur port {port} (Webhook mode)")
 
-    # Pour tester en local (polling)
-    app.run_polling()
+    # On garde l'application en mémoire
+    return application
 
-# Gestion des boutons du menu
-async def handle_text(update, context):
-    text = update.message.text
-
-    if text == "👤 Mon Profil":
-        await show_profile(update, context)
-    elif text == "💰 Acheter Crédits":
-        await buy_credits_menu(update, context)
-    elif text == "🔗 Mon Lien Parrainage":
-        user_id = update.effective_user.id
-        await update.message.reply_text(
-            f"🔗 Ton lien de parrainage :\n"
-            f"https://t.me/{(await context.bot.get_me()).username}?start={user_id}\n\n"
-            "Partage ce lien → Tu gagnes 20 crédits par filleul valide !"
-        )
-    elif text == "🏆 Top Promoteurs":
-        await update.message.reply_text("🏆 Top Promoteurs du mois\n(Fonction en cours de développement)")
-    elif text == "💸 Retrait":
-        await update.message.reply_text("💸 Retrait (minimum 5000 CFA)\nFonction bientôt disponible.")
-    elif text == "📚 Boutique Formations":
-        await update.message.reply_text("📚 Boutique des formations\nBientôt disponible.")
-    else:
-        await main_menu(update, context)
-
-
-if __name__ == '__main__':
-    main()
-
-print("✅ main.py chargé avec succès OK")
+if __name__ == "__main__":
+    print("✅ main.py chargé avec succès OK")
+    app = main()
+    # Ne rien lancer ici, Render va juste exécuter le fichier
+    print("🚀 En attente de configuration webhook...")
